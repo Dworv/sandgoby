@@ -1,4 +1,4 @@
-use crate::Board;
+use crate::{Board, Location};
 use std::fmt::{Debug, Formatter};
 
 pub struct Piece {
@@ -10,8 +10,17 @@ impl Piece {
     pub fn new(team: Team, kind: PieceKind) -> Self {
         Self { team, kind }
     }
-    pub fn moves(&self, board: &Board) -> Vec<(usize, usize)> {
-        todo!()
+    pub fn moves(&self, location: Location, board: &Board) -> Vec<Move> {
+        match self.kind {
+            PieceKind::King => {
+                if
+            },
+            PieceKind::Queen => todo!(),
+            PieceKind::Rook => todo!(),
+            PieceKind::Bishop => todo!(),
+            PieceKind::Knight => todo!(),
+            PieceKind::Pawn => todo!(),
+        }
     }
 }
 
@@ -48,4 +57,15 @@ pub enum PieceKind {
     Bishop,
     Knight,
     Pawn,
+}
+
+pub enum CastleKind {
+    Kingside,
+    Queenside
+}
+
+pub enum Move {
+    Regular { start: Location, end: Location },
+    Castle { kind: CastleKind },
+    Enpassent { start: Location, end: Location }
 }
