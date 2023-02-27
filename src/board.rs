@@ -39,10 +39,10 @@ impl Board {
     pub fn from_fen(fen: &str) -> Self {
         let mut contents = fen.split(" ");
         let mut board = Board::new();
-        for (r, row) in contents.next().unwrap().split("/").enumerate() {
+        for (r, row) in contents.next().unwrap().split('/').enumerate() {
             let mut c = 0usize;
             for ch in row.chars() {
-                if (ch as u8 > '0' as u8) && ('9' as u8 > ch as u8) {
+                if (ch as u8 > b'0') && (b'9' > ch as u8) {
                     c += ch as usize - '0' as usize;
                 } else {
                     board.insert(
@@ -74,16 +74,16 @@ impl Board {
         };
         let castling = contents.next().unwrap();
         if castling != "-" {
-            if castling.contains("K") {
+            if castling.contains('K') {
                 board.castles.wk = true
             }
-            if castling.contains("Q") {
+            if castling.contains('Q') {
                 board.castles.wq = true
             }
-            if castling.contains("k") {
+            if castling.contains('k') {
                 board.castles.bk = true
             }
-            if castling.contains("q") {
+            if castling.contains('q') {
                 board.castles.bq = true
             }
         }
@@ -155,7 +155,7 @@ impl AlgebraicNotation for Location {
     fn from_algebraic_notation(an: String) -> Self {
         (
             '8' as i8 - an.chars().nth(1).unwrap() as i8,
-            an.chars().nth(0).unwrap() as i8 - 'a' as i8,
+            an.chars().next().unwrap() as i8 - 'a' as i8,
         )
     }
 }

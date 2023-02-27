@@ -21,12 +21,12 @@ impl Piece {
             PieceKind::Knight => todo!(),
             PieceKind::Pawn => {
                 if board.get(location.forwards(self.team, 1)).is_none() {
-                    moves.push(PossibleMove::new(
-                        location,
-                        location.forwards(self.team, 1)
-                    ))
+                    moves.push(PossibleMove::new(location, location.forwards(self.team, 1)))
                 }
-                let takes = [location.forwards(self.team, 1).left(1), location.forwards(self.team, 1).right(1)];
+                let takes = [
+                    location.forwards(self.team, 1).left(1),
+                    location.forwards(self.team, 1).right(1),
+                ];
                 println!("{takes:?}");
                 for take in takes {
                     if take.in_bounds() {
@@ -73,7 +73,7 @@ impl Debug for Piece {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Team {
     White,
     Black,
@@ -94,13 +94,13 @@ pub enum CastleKind {
     Queenside,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct PossibleMove {
     start: Location,
     end: Location,
     rook_start: Option<Location>,
     rook_end: Option<Location>,
-    promotion: bool
+    promotion: bool,
 }
 
 impl PossibleMove {
@@ -110,7 +110,7 @@ impl PossibleMove {
             end,
             rook_start: None,
             rook_end: None,
-            promotion: false
+            promotion: false,
         }
     }
 
