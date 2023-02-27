@@ -37,7 +37,7 @@ impl Board {
     }
 
     pub fn from_fen(fen: &str) -> Self {
-        let mut contents = fen.split(" ");
+        let mut contents = fen.split(' ');
         let mut board = Board::new();
         for (r, row) in contents.next().unwrap().split('/').enumerate() {
             let mut c = 0usize;

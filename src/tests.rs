@@ -1,4 +1,4 @@
-use crate::{AlgebraicNotation, Board, ChessLocation, Location, Piece, PossibleMove, Team::*};
+use crate::{AlgebraicNotation, Board, ChessLocation, Location, PossibleMove, Team::*};
 
 #[test]
 fn alg_in() {
