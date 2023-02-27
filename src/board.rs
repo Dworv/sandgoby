@@ -10,7 +10,7 @@ pub struct Board {
     pieces: [[Option<Piece>; 8]; 8],
     current_player: Team,
     castles: Castles,
-    enpassent: Option<(usize, usize)>,
+    enpassent: Option<Location>,
     halfmove_clock: u8,
     num_moves: u32,
 }
@@ -46,7 +46,7 @@ impl Board {
                     c += ch as usize - '0' as usize;
                 } else {
                     board.insert(
-                        (r, c),
+                        (r as i8, c as i8),
                         match ch {
                             'K' => Piece::new(White, King),
                             'Q' => Piece::new(White, Queen),
@@ -101,15 +101,15 @@ impl Board {
     }
 
     pub fn get(&self, location: Location) -> Option<Piece> {
-        self.pieces[location.0][location.1]
+        self.pieces[location.0 as usize][location.1 as usize]
     }
 
     pub fn insert(&mut self, location: Location, piece: Piece) {
-        self.pieces[location.0][location.1] = Some(piece);
+        self.pieces[location.0 as usize][location.1 as usize] = Some(piece);
     }
 
     pub fn remove(&mut self, location: Location) {
-        self.pieces[location.0][location.1] = None;
+        self.pieces[location.0 as usize][location.1 as usize] = None;
     }
 
     pub fn enpassent(&self) -> Option<Location> {
@@ -140,7 +140,7 @@ pub struct Castles {
     pub bk: bool,
 }
 
-pub type Location = (usize, usize);
+pub type Location = (i8, i8);
 
 pub trait AlgebraicNotation {
     fn from_algebraic_notation(an: String) -> Self;
@@ -149,41 +149,41 @@ pub trait AlgebraicNotation {
 
 impl AlgebraicNotation for Location {
     fn in_algebraic_notation(&self) -> String {
-        format!("{}{}", ('a' as usize + self.1) as u8 as char, 8 - self.0)
+        format!("{}{}", ('a' as i8 + self.1) as u8 as char, 8 - self.0)
     }
 
     fn from_algebraic_notation(an: String) -> Self {
         (
-            '8' as usize - an.chars().nth(1).unwrap() as usize,
-            an.chars().nth(0).unwrap() as usize - 'a' as usize,
+            '8' as i8 - an.chars().nth(1).unwrap() as i8,
+            an.chars().nth(0).unwrap() as i8 - 'a' as i8,
         )
     }
 }
 
 pub trait ChessLocation {
     fn in_bounds(&self) -> bool;
-    fn forwards(&self, team: Team, dist: usize) -> Self;
-    fn left(&self, dist: usize) -> Self;
-    fn right(&self, dist: usize) -> Self;
+    fn forwards(&self, team: Team, dist: i8) -> Self;
+    fn left(&self, dist: i8) -> Self;
+    fn right(&self, dist: i8) -> Self;
 }
 
 impl ChessLocation for Location {
     fn in_bounds(&self) -> bool {
-        self.0 < 8 && self.1 < 8
+        self.0 > 0 && self.0 < 8 && self.1 < 8 && self.1 > 0
     }
 
-    fn forwards(&self, team: Team, dist: usize) -> Self {
+    fn forwards(&self, team: Team, dist: i8) -> Self {
         match team {
             White => (self.0 - dist, self.1),
             Black => (self.0 + dist, self.1),
         }
     }
 
-    fn left(&self, dist: usize) -> Self {
+    fn left(&self, dist: i8) -> Self {
         (self.0, self.1 - dist)
     }
 
-    fn right(&self, dist: usize) -> Self {
+    fn right(&self, dist: i8) -> Self {
         (self.0, self.1 + dist)
     }
 }

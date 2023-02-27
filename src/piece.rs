@@ -26,17 +26,18 @@ impl Piece {
                         location.forwards(self.team, 1)
                     ))
                 }
-                let takes = [location.forwards(self.team, 1).left(1), location.forwards(self.team, 1)];
+                let takes = [location.forwards(self.team, 1).left(1), location.forwards(self.team, 1).right(1)];
+                println!("{takes:?}");
                 for take in takes {
                     if take.in_bounds() {
                         if let Some(target) = board.get(take) {
-                            if target.team == Team::Black {
+                            if target.team != self.team {
                                 moves.push(PossibleMove::new(location, take));
                             }
-                        }
-                    } else if let Some(enp) = board.enpassent() {
-                        if enp == take {
-                            moves.push(PossibleMove::new(location, take));
+                        } else if let Some(enp) = board.enpassent() {
+                            if enp == take {
+                                moves.push(PossibleMove::new(location, take));
+                            }
                         }
                     }
                 }
