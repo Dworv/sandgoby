@@ -28,12 +28,12 @@ impl Board {
             },
             enpassent: None,
             halfmove_clock: 0,
-            num_moves: 1
+            num_moves: 1,
         }
     }
 
     pub fn normal_board() -> Self {
-        Board::from_fen("8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50")
+        Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     }
 
     pub fn from_fen(fen: &str) -> Self {
@@ -100,12 +100,20 @@ impl Board {
         board
     }
 
-    pub fn insert(&mut self, location: (usize, usize), piece: Piece) {
+    pub fn get(&self, location: Location) -> Option<Piece> {
+        self.pieces[location.0][location.1]
+    }
+
+    pub fn insert(&mut self, location: Location, piece: Piece) {
         self.pieces[location.0][location.1] = Some(piece);
     }
 
-    pub fn remove(&mut self, location: (usize, usize)) {
+    pub fn remove(&mut self, location: Location) {
         self.pieces[location.0][location.1] = None;
+    }
+
+    pub fn enpassent(&self) -> Option<Location> {
+        self.enpassent
     }
 }
 
@@ -149,5 +157,33 @@ impl AlgebraicNotation for Location {
             '8' as usize - an.chars().nth(1).unwrap() as usize,
             an.chars().nth(0).unwrap() as usize - 'a' as usize,
         )
+    }
+}
+
+pub trait ChessLocation {
+    fn in_bounds(&self) -> bool;
+    fn forwards(&self, team: Team, dist: usize) -> Self;
+    fn left(&self, dist: usize) -> Self;
+    fn right(&self, dist: usize) -> Self;
+}
+
+impl ChessLocation for Location {
+    fn in_bounds(&self) -> bool {
+        self.0 < 8 && self.1 < 8
+    }
+
+    fn forwards(&self, team: Team, dist: usize) -> Self {
+        match team {
+            White => (self.0 - dist, self.1),
+            Black => (self.0 + dist, self.1),
+        }
+    }
+
+    fn left(&self, dist: usize) -> Self {
+        (self.0, self.1 - dist)
+    }
+
+    fn right(&self, dist: usize) -> Self {
+        (self.0, self.1 + dist)
     }
 }
