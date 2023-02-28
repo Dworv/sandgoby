@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Formatter};
 
 use crate::{
     Piece,
-    PieceKind::*,
+    PieceKind::{*, self},
     Team::{self, *},
 };
 
@@ -114,6 +114,82 @@ impl Board {
 
     pub fn enpassent(&self) -> Option<Location> {
         self.enpassent
+    }
+
+    pub fn threatened(&self, loc: Location) -> bool {
+        if let Some(piece) = self.get(loc) {
+            let team = piece.get_team();
+            let knight_pos = [
+                (2, 1),
+                (2, -1),
+                (1, 2),
+                (-1, 2),
+                (-2, 1),
+                (-2, -1),
+                (1, -2),
+                (-1, -2)
+            ];
+            for pos in knight_pos {
+                if pos.in_bounds() {
+                    if let Some(other_piece) = self.get(loc.forwards(team, pos.0).sideways(pos.1)) {
+                        if other_piece.get_team() != team && other_piece.get_kind() == Knight {
+                            return true;
+                        }
+                    }
+                }
+            }
+            for offset in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
+                let mut dist = 1;
+                loop {
+                    let current = loc.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
+                    if !current.in_bounds() {
+                        break;
+                    }
+                    if let Some(other_piece) = self.get(current) {
+                        if team != other_piece.get_team() && (other_piece.get_kind() == Rook || other_piece.get_kind() == Queen ) {
+                            return true;
+                        }
+                        break;
+                    }
+                    dist += 1;
+                }
+            }
+            for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
+                let mut dist = 1;
+                loop {
+                    let current = loc.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
+                    if !current.in_bounds() {
+                        break;
+                    }
+                    if let Some(other_piece) = self.get(current) {
+                        if team != other_piece.get_team() && (other_piece.get_kind() == Bishop || other_piece.get_kind() == Queen ) {
+                            return true;
+                        }
+                        break;
+                    }
+                    dist += 1;
+                }
+            }
+            for pawn_side in [1, -1] {
+                if let Some(other_piece) = self.get(loc.forwards(team, 1).sideways(pawn_side)) {
+                    if team != other_piece.get_team() && other_piece.get_kind() == Pawn {
+                        return true;
+                    }
+                }
+            }
+            for king_r in -1..=1 {
+                for king_c in -1..=1 {
+                    if let Some(other_piece) = self.get(loc.forwards(team, king_r).sideways(king_c)) {
+                        if other_piece.get_team() != team && other_piece.get_kind() == King {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } else {
+            panic!("nothing here :(");
+        }
+        false
     }
 }
 
