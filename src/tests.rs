@@ -54,8 +54,20 @@ fn knight_moves() {
 #[test]
 fn bishop_moves() {
     let loc = Location::from_algebraic_notation(String::from("c6"));
-    let board = Board::from_fen("7k/8/2B5/8/8/8/8/7K w - - 1 1");
+    let board = Board::from_fen("7k/1p1P4/2B5/8/8/8/8/7K w - - 1 1");
     let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
     println!("{pos_moves:?}");
     assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, -2).sideways(2))));
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).sideways(-1))));
+    assert!(!pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 2).sideways(-2))));
+    assert!(!pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).sideways(1))));
+}
+
+#[test]
+fn rook_moves() {
+    let loc = Location::from_algebraic_notation(String::from("c6"));
+    let board = Board::from_fen("7k/8/2R5/8/8/8/8/7K w - - 1 1");
+    let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
+    println!("{pos_moves:?}");
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.sideways(3))));
 }

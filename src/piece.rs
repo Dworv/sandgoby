@@ -11,12 +11,67 @@ impl Piece {
     pub fn new(team: Team, kind: PieceKind) -> Self {
         Self { team, kind }
     }
+
+    pub fn get_team(&self) -> Team {
+        self.team
+    }
+
+    pub fn get_kind(&self) -> PieceKind {
+        self.kind
+    }
+
     pub fn possible_moves(&self, location: Location, board: &Board) -> Vec<PossibleMove> {
         let mut moves = vec![];
         match self.kind {
-            PieceKind::King => todo!(),
-            PieceKind::Queen => todo!(),
-            PieceKind::Rook => todo!(),
+            PieceKind::King => {
+
+            },
+            PieceKind::Queen => {
+                for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, -1), (0, 1)] {
+                    let mut dist = 1;
+                    loop {
+                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        if !current.in_bounds() {
+                            break;
+                        }
+                        match board.get(current) {
+                            Some(piece) => {
+                                if piece.team != self.team {
+                                    moves.push(PossibleMove::new(location, current));
+                                }
+                                break;
+                            },
+                            None => {
+                                moves.push(PossibleMove::new(location, current));
+                            },
+                        }
+                        dist += 1;
+                    }
+                }
+            },
+            PieceKind::Rook => {
+                for offset in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
+                    let mut dist = 1;
+                    loop {
+                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        if !current.in_bounds() {
+                            break;
+                        }
+                        match board.get(current) {
+                            Some(piece) => {
+                                if piece.team != self.team {
+                                    moves.push(PossibleMove::new(location, current));
+                                }
+                                break;
+                            },
+                            None => {
+                                moves.push(PossibleMove::new(location, current));
+                            },
+                        }
+                        dist += 1;
+                    }
+                }
+            },
             PieceKind::Bishop => {
                 for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
                     let mut dist = 1;
@@ -117,7 +172,7 @@ pub enum Team {
     Black,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum PieceKind {
     King,
     Queen,
