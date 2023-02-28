@@ -163,13 +163,12 @@ impl AlgebraicNotation for Location {
 pub trait ChessLocation {
     fn in_bounds(&self) -> bool;
     fn forwards(&self, team: Team, dist: i8) -> Self;
-    fn left(&self, dist: i8) -> Self;
-    fn right(&self, dist: i8) -> Self;
+    fn sideways(&self, dist: i8) -> Self;
 }
 
 impl ChessLocation for Location {
     fn in_bounds(&self) -> bool {
-        self.0 > 0 && self.0 < 8 && self.1 < 8 && self.1 > 0
+        self.0 >= 0 && self.0 < 8 && self.1 < 8 && self.1 >= 0
     }
 
     fn forwards(&self, team: Team, dist: i8) -> Self {
@@ -179,11 +178,9 @@ impl ChessLocation for Location {
         }
     }
 
-    fn left(&self, dist: i8) -> Self {
-        (self.0, self.1 - dist)
-    }
-
-    fn right(&self, dist: i8) -> Self {
+    fn sideways(&self, dist: i8) -> Self {
         (self.0, self.1 + dist)
     }
+
+    
 }
