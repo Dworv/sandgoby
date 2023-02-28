@@ -27,8 +27,8 @@ fn pawn_taking() {
     let board = Board::from_fen("7k/8/4p3/2pP4/8/8/8/7K w - c6 1 1");
     let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
     assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1))));
-    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).left(1))));
-    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).right(1))));
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).sideways(-1))));
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1).sideways(1))));
 }
 
 #[test]
@@ -40,4 +40,22 @@ fn pawn_promotion() {
     let mut promote = PossibleMove::new(loc, loc.forwards(White, 1));
     promote.set_promotion(true);
     assert!(pos_moves.contains(&promote));
+}
+
+#[test]
+fn knight_moves() {
+    let loc = Location::from_algebraic_notation(String::from("c6"));
+    let board = Board::from_fen("7k/8/2N5/8/8/8/8/7K w - - 1 1");
+    let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
+    println!("{pos_moves:?}");
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 2).sideways(1))));
+}
+
+#[test]
+fn bishop_moves() {
+    let loc = Location::from_algebraic_notation(String::from("c6"));
+    let board = Board::from_fen("7k/8/2B5/8/8/8/8/7K w - - 1 1");
+    let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
+    println!("{pos_moves:?}");
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, -2).sideways(2))));
 }

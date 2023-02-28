@@ -17,15 +17,53 @@ impl Piece {
             PieceKind::King => todo!(),
             PieceKind::Queen => todo!(),
             PieceKind::Rook => todo!(),
-            PieceKind::Bishop => todo!(),
-            PieceKind::Knight => todo!(),
+            PieceKind::Bishop => {
+                for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
+                    let mut dist = 1;
+                    loop {
+                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        if !current.in_bounds() {
+                            break;
+                        }
+                        match board.get(current) {
+                            Some(piece) => {
+                                if piece.team != self.team {
+                                    moves.push(PossibleMove::new(location, current));
+                                }
+                                break;
+                            },
+                            None => {
+                                moves.push(PossibleMove::new(location, current));
+                            },
+                        }
+                        dist += 1;
+                    }
+                }
+            },
+            PieceKind::Knight => {
+                moves.append(
+                    &mut [
+                        location.forwards(self.team, 2).sideways(-1),
+                        location.forwards(self.team, 2).sideways(1),
+                        location.forwards(self.team, -2).sideways(-1),
+                        location.forwards(self.team, -2).sideways(1),
+                        location.forwards(self.team, 1).sideways(2),
+                        location.forwards(self.team, -1).sideways(2),
+                        location.forwards(self.team, 1).sideways(-2),
+                        location.forwards(self.team, -1).sideways(-2)
+                    ].into_iter()
+                        .filter(|loc| loc.in_bounds())
+                        .map(|end| PossibleMove::new(location, end))
+                        .collect()
+                );
+            }
             PieceKind::Pawn => {
                 if board.get(location.forwards(self.team, 1)).is_none() {
                     moves.push(PossibleMove::new(location, location.forwards(self.team, 1)))
                 }
                 let takes = [
-                    location.forwards(self.team, 1).left(1),
-                    location.forwards(self.team, 1).right(1),
+                    location.forwards(self.team, 1).sideways(-1),
+                    location.forwards(self.team, 1).sideways(1),
                 ];
                 println!("{takes:?}");
                 for take in takes {
