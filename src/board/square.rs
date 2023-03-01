@@ -1,6 +1,6 @@
 use crate::Team::{self, *};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Square(pub i8, pub i8);
 
 impl Square {

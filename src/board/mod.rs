@@ -1,19 +1,19 @@
 mod square;
 pub use square::Square;
 
-use std::fmt::{self, Debug, Formatter};
+use std::{fmt::{self, Debug, Formatter}, collections::HashMap};
 
 use crate::{
     Piece,
     PieceKind::{*, self},
-    Team::{self, *},
+    Team::{self, *}, PossibleMove,
 };
 
 pub struct Board {
     pieces: [[Option<Piece>; 8]; 8],
     kings: (Square, Square),
     current_player: Team,
-    castles: Castles,
+    castles: PossibleCastles,
     enpassent: Option<Square>,
     halfmove_clock: u8,
     num_moves: u32,
@@ -28,7 +28,7 @@ impl Board {
             pieces,
             kings: (Square(7, 4), Square(0, 4)),
             current_player: White,
-            castles: Castles {
+            castles: PossibleCastles {
                 wq: false,
                 wk: false,
                 bq: false,
@@ -152,6 +152,23 @@ impl Board {
         }
     }
 
+    pub fn possible_moves(&self) -> HashMap<Square, Vec<PossibleMove>> {
+        let mut possible_moves: HashMap<Square, Vec<PossibleMove>> = HashMap::new();
+        for r in 0..8 {
+            for c in 0..8 {
+                if let Some(piece) = self.get(Square(r, c)) {
+                    if piece.get_team() == self.current_player {
+                        let possible_piece_moves = piece.possible_moves(Square(r, c), self);
+                        if possible_piece_moves.len() > 0 {
+                            possible_moves.insert(Square(r, c), possible_piece_moves);
+                        }
+                    }
+                }
+            }
+        }
+        possible_moves
+    }
+
     pub fn threatened(&self, square: Square, ignoring: Option<Square>) -> bool {
         if let Some(piece) = self.get(square) {
             let team = piece.get_team();
@@ -246,7 +263,7 @@ impl Debug for Board {
     }
 }
 
-pub struct Castles {
+pub struct PossibleCastles {
     pub wq: bool,
     pub wk: bool,
     pub bq: bool,
