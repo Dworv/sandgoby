@@ -1,4 +1,4 @@
-use crate::{Board, ChessLocation, Location};
+use crate::{Board, Square};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Copy)]
@@ -20,7 +20,7 @@ impl Piece {
         self.kind
     }
 
-    pub fn possible_moves(&self, location: Location, board: &Board) -> Vec<PossibleMove> {
+    pub fn possible_moves(&self, square: Square, board: &Board) -> Vec<PossibleMove> {
         let mut moves = vec![];
         match self.kind {
             PieceKind::King => {
@@ -30,19 +30,19 @@ impl Piece {
                 for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, -1), (0, 1)] {
                     let mut dist = 1;
                     loop {
-                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        let current = square.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
                         if !current.in_bounds() {
                             break;
                         }
                         match board.get(current) {
                             Some(piece) => {
                                 if piece.team != self.team {
-                                    moves.push(PossibleMove::new(location, current));
+                                    moves.push(PossibleMove::new(square, current));
                                 }
                                 break;
                             },
                             None => {
-                                moves.push(PossibleMove::new(location, current));
+                                moves.push(PossibleMove::new(square, current));
                             },
                         }
                         dist += 1;
@@ -53,19 +53,19 @@ impl Piece {
                 for offset in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
                     let mut dist = 1;
                     loop {
-                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        let current = square.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
                         if !current.in_bounds() {
                             break;
                         }
                         match board.get(current) {
                             Some(piece) => {
                                 if piece.team != self.team {
-                                    moves.push(PossibleMove::new(location, current));
+                                    moves.push(PossibleMove::new(square, current));
                                 }
                                 break;
                             },
                             None => {
-                                moves.push(PossibleMove::new(location, current));
+                                moves.push(PossibleMove::new(square, current));
                             },
                         }
                         dist += 1;
@@ -76,19 +76,19 @@ impl Piece {
                 for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
                     let mut dist = 1;
                     loop {
-                        let current = location.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
+                        let current = square.forwards(self.team, offset.0 * dist).sideways(offset.1 * dist);
                         if !current.in_bounds() {
                             break;
                         }
                         match board.get(current) {
                             Some(piece) => {
                                 if piece.team != self.team {
-                                    moves.push(PossibleMove::new(location, current));
+                                    moves.push(PossibleMove::new(square, current));
                                 }
                                 break;
                             },
                             None => {
-                                moves.push(PossibleMove::new(location, current));
+                                moves.push(PossibleMove::new(square, current));
                             },
                         }
                         dist += 1;
@@ -98,49 +98,50 @@ impl Piece {
             PieceKind::Knight => {
                 moves.append(
                     &mut [
-                        location.forwards(self.team, 2).sideways(-1),
-                        location.forwards(self.team, 2).sideways(1),
-                        location.forwards(self.team, -2).sideways(-1),
-                        location.forwards(self.team, -2).sideways(1),
-                        location.forwards(self.team, 1).sideways(2),
-                        location.forwards(self.team, -1).sideways(2),
-                        location.forwards(self.team, 1).sideways(-2),
-                        location.forwards(self.team, -1).sideways(-2)
+                        square.forwards(self.team, 2).sideways(-1),
+                        square.forwards(self.team, 2).sideways(1),
+                        square.forwards(self.team, -2).sideways(-1),
+                        square.forwards(self.team, -2).sideways(1),
+                        square.forwards(self.team, 1).sideways(2),
+                        square.forwards(self.team, -1).sideways(2),
+                        square.forwards(self.team, 1).sideways(-2),
+                        square.forwards(self.team, -1).sideways(-2)
                     ].into_iter()
                         .filter(|loc| loc.in_bounds())
-                        .map(|end| PossibleMove::new(location, end))
+                        .map(|end| PossibleMove::new(square, end))
                         .collect()
                 );
             }
             PieceKind::Pawn => {
-                if board.get(location.forwards(self.team, 1)).is_none() {
-                    moves.push(PossibleMove::new(location, location.forwards(self.team, 1)))
+                if board.get(square.forwards(self.team, 1)).is_none() {
+                    moves.push(PossibleMove::new(square, square.forwards(self.team, 1)))
                 }
                 let takes = [
-                    location.forwards(self.team, 1).sideways(-1),
-                    location.forwards(self.team, 1).sideways(1),
+                    square.forwards(self.team, 1).sideways(-1),
+                    square.forwards(self.team, 1).sideways(1),
                 ];
                 println!("{takes:?}");
                 for take in takes {
                     if take.in_bounds() {
                         if let Some(target) = board.get(take) {
                             if target.team != self.team {
-                                moves.push(PossibleMove::new(location, take));
+                                moves.push(PossibleMove::new(square, take));
                             }
                         } else if let Some(enp) = board.enpassent() {
                             if enp == take {
-                                moves.push(PossibleMove::new(location, take));
+                                moves.push(PossibleMove::new(square, take));
                             }
                         }
                     }
                 }
-                if !location.forwards(self.team, 2).in_bounds() {
+                if !square.forwards(self.team, 2).in_bounds() {
                     for pmove in &mut moves {
                         pmove.set_promotion(true)
                     }
                 }
             }
         }
+
         moves
     }
 }
@@ -189,15 +190,15 @@ pub enum CastleKind {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct PossibleMove {
-    start: Location,
-    end: Location,
-    rook_start: Option<Location>,
-    rook_end: Option<Location>,
+    start: Square,
+    end: Square,
+    rook_start: Option<Square>,
+    rook_end: Option<Square>,
     promotion: bool,
 }
 
 impl PossibleMove {
-    pub fn new(start: Location, end: Location) -> Self {
+    pub fn new(start: Square, end: Square) -> Self {
         Self {
             start,
             end,
@@ -207,7 +208,7 @@ impl PossibleMove {
         }
     }
 
-    pub fn set_rook(&mut self, start: Location, end: Location) {
+    pub fn set_rook(&mut self, start: Square, end: Square) {
         self.rook_start = Some(start);
         self.rook_end = Some(end);
     }
@@ -218,8 +219,8 @@ impl PossibleMove {
 }
 
 pub struct Move {
-    start: Location,
-    end: Location,
+    start: Square,
+    end: Square,
     check: bool,
     capture: bool,
     checkmate: bool,
@@ -230,8 +231,8 @@ pub enum MoveKind {
     Regular,
     Enpassent,
     Castle {
-        rook_start: Location,
-        rook_end: Location,
+        rook_start: Square,
+        rook_end: Square,
     },
     Promotion {
         new_piece: PieceKind,

@@ -1,3 +1,6 @@
+mod square;
+pub use square::Square;
+
 use std::fmt::{self, Debug, Formatter};
 
 use crate::{
@@ -8,17 +11,22 @@ use crate::{
 
 pub struct Board {
     pieces: [[Option<Piece>; 8]; 8],
+    kings: (Square, Square),
     current_player: Team,
     castles: Castles,
-    enpassent: Option<Location>,
+    enpassent: Option<Square>,
     halfmove_clock: u8,
     num_moves: u32,
 }
 
 impl Board {
     pub fn new() -> Self {
+        let mut pieces: [[Option<Piece>; 8]; 8] = Default::default();
+        pieces[0][4] = Some(Piece::new(Black, King));
+        pieces[7][4] = Some(Piece::new(White, King));
         Board {
-            pieces: Default::default(),
+            pieces,
+            kings: (Square(7, 4), Square(0, 4)),
             current_player: White,
             castles: Castles {
                 wq: false,
@@ -39,14 +47,30 @@ impl Board {
     pub fn from_fen(fen: &str) -> Self {
         let mut contents = fen.split(' ');
         let mut board = Board::new();
+        let mut kings_added = (false, false);
         for (r, row) in contents.next().unwrap().split('/').enumerate() {
             let mut c = 0usize;
             for ch in row.chars() {
                 if (ch as u8 > b'0') && (b'9' > ch as u8) {
                     c += ch as usize - '0' as usize;
                 } else {
+                    if ch == 'K' {
+                        if !kings_added.0 {
+                            kings_added.0 = true;
+                            board.kings.0 = Square(r as i8, c as i8)
+                        } else {
+                            panic!("TWO KINGS")
+                        }
+                    } else if ch == 'k' {
+                        if !kings_added.1 {
+                            kings_added.1 = true;
+                            board.kings.1 = Square(r as i8, c as i8)
+                        } else {
+                            panic!("TWO KINGS")
+                        }
+                    }
                     board.insert(
-                        (r as i8, c as i8),
+                        Square(r as i8, c as i8),
                         match ch {
                             'K' => Piece::new(White, King),
                             'Q' => Piece::new(White, Queen),
@@ -89,7 +113,7 @@ impl Board {
         }
         let enpassent = contents.next().unwrap();
         if enpassent != "-" {
-            board.enpassent = Some(Location::from_algebraic_notation(String::from(enpassent)))
+            board.enpassent = Some(Square::from_alg(enpassent))
         }
         if let Ok(num) = contents.next().unwrap().parse() {
             board.halfmove_clock = num
@@ -100,26 +124,38 @@ impl Board {
         board
     }
 
-    pub fn get(&self, location: Location) -> Option<Piece> {
-        self.pieces[location.0 as usize][location.1 as usize]
+    pub fn get(&self, square: Square) -> Option<Piece> {
+        self.pieces[square.0 as usize][square.1 as usize]
     }
 
-    pub fn insert(&mut self, location: Location, piece: Piece) {
-        self.pieces[location.0 as usize][location.1 as usize] = Some(piece);
+    pub fn insert(&mut self, square: Square, piece: Piece) {
+        self.pieces[square.0 as usize][square.1 as usize] = Some(piece);
     }
 
-    pub fn remove(&mut self, location: Location) {
-        self.pieces[location.0 as usize][location.1 as usize] = None;
+    pub fn remove(&mut self, square: Square) {
+        self.pieces[square.0 as usize][square.1 as usize] = None;
     }
 
-    pub fn enpassent(&self) -> Option<Location> {
+    pub fn enpassent(&self) -> Option<Square> {
         self.enpassent
     }
 
-    pub fn threatened(&self, loc: Location) -> bool {
-        if let Some(piece) = self.get(loc) {
+    pub fn get_king_loc(&self, team: Team) -> Square {
+        if team == White { self.kings.0 } else {self.kings.1}
+    }
+
+    pub fn set_king_loc(&mut self, team: Team, square: Square) {
+        if team == White { 
+            self.kings.0 = square;
+        } else { 
+            self.kings.1 = square;
+        }
+    }
+
+    pub fn threatened(&self, square: Square, ignoring: Option<Square>) -> bool {
+        if let Some(piece) = self.get(square) {
             let team = piece.get_team();
-            let knight_pos = [
+            let knight_moves = [
                 (2, 1),
                 (2, -1),
                 (1, 2),
@@ -129,9 +165,10 @@ impl Board {
                 (1, -2),
                 (-1, -2)
             ];
-            for pos in knight_pos {
-                if pos.in_bounds() {
-                    if let Some(other_piece) = self.get(loc.forwards(team, pos.0).sideways(pos.1)) {
+            for mve in knight_moves {
+                let new_square = square.forwards(team, mve.0).sideways(mve.1);
+                if new_square.in_bounds() {
+                    if let Some(other_piece) = self.get(new_square) {
                         if other_piece.get_team() != team && other_piece.get_kind() == Knight {
                             return true;
                         }
@@ -141,7 +178,7 @@ impl Board {
             for offset in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
                 let mut dist = 1;
                 loop {
-                    let current = loc.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
+                    let current = square.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
                     if !current.in_bounds() {
                         break;
                     }
@@ -157,7 +194,7 @@ impl Board {
             for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
                 let mut dist = 1;
                 loop {
-                    let current = loc.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
+                    let current = square.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
                     if !current.in_bounds() {
                         break;
                     }
@@ -171,7 +208,7 @@ impl Board {
                 }
             }
             for pawn_side in [1, -1] {
-                if let Some(other_piece) = self.get(loc.forwards(team, 1).sideways(pawn_side)) {
+                if let Some(other_piece) = self.get(square.forwards(team, 1).sideways(pawn_side)) {
                     if team != other_piece.get_team() && other_piece.get_kind() == Pawn {
                         return true;
                     }
@@ -179,7 +216,7 @@ impl Board {
             }
             for king_r in -1..=1 {
                 for king_c in -1..=1 {
-                    if let Some(other_piece) = self.get(loc.forwards(team, king_r).sideways(king_c)) {
+                    if let Some(other_piece) = self.get(square.forwards(team, king_r).sideways(king_c)) {
                         if other_piece.get_team() != team && other_piece.get_kind() == King {
                             return true;
                         }
@@ -214,49 +251,4 @@ pub struct Castles {
     pub wk: bool,
     pub bq: bool,
     pub bk: bool,
-}
-
-pub type Location = (i8, i8);
-
-pub trait AlgebraicNotation {
-    fn from_algebraic_notation(an: String) -> Self;
-    fn in_algebraic_notation(&self) -> String;
-}
-
-impl AlgebraicNotation for Location {
-    fn in_algebraic_notation(&self) -> String {
-        format!("{}{}", ('a' as i8 + self.1) as u8 as char, 8 - self.0)
-    }
-
-    fn from_algebraic_notation(an: String) -> Self {
-        (
-            '8' as i8 - an.chars().nth(1).unwrap() as i8,
-            an.chars().next().unwrap() as i8 - 'a' as i8,
-        )
-    }
-}
-
-pub trait ChessLocation {
-    fn in_bounds(&self) -> bool;
-    fn forwards(&self, team: Team, dist: i8) -> Self;
-    fn sideways(&self, dist: i8) -> Self;
-}
-
-impl ChessLocation for Location {
-    fn in_bounds(&self) -> bool {
-        self.0 >= 0 && self.0 < 8 && self.1 < 8 && self.1 >= 0
-    }
-
-    fn forwards(&self, team: Team, dist: i8) -> Self {
-        match team {
-            White => (self.0 - dist, self.1),
-            Black => (self.0 + dist, self.1),
-        }
-    }
-
-    fn sideways(&self, dist: i8) -> Self {
-        (self.0, self.1 + dist)
-    }
-
-    
 }
