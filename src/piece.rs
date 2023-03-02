@@ -24,10 +24,18 @@ impl Piece {
         let mut moves = vec![];
         match self.kind {
             PieceKind::King => {
+                // TODO: CASTLING
                 for king_move in [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)] {
                     let king_dest = square.forwards(self.team, king_move.0).sideways(king_move.1);
                     if king_dest.in_bounds() {
-                        moves.push(PossibleMove::new(square, king_dest));
+                        if let Some(piece) = board.get(king_dest) {
+                            if piece.get_team() != self.get_team() {
+                                moves.push(PossibleMove::new(square, king_dest))
+                            }
+                        }
+                        else {
+                            moves.push(PossibleMove::new(square, king_dest));
+                        }
                     }
                 }
             },
@@ -101,25 +109,35 @@ impl Piece {
                 }
             },
             PieceKind::Knight => {
-                moves.append(
-                    &mut [
-                        square.forwards(self.team, 2).sideways(-1),
-                        square.forwards(self.team, 2).sideways(1),
-                        square.forwards(self.team, -2).sideways(-1),
-                        square.forwards(self.team, -2).sideways(1),
-                        square.forwards(self.team, 1).sideways(2),
-                        square.forwards(self.team, -1).sideways(2),
-                        square.forwards(self.team, 1).sideways(-2),
-                        square.forwards(self.team, -1).sideways(-2)
-                    ].into_iter()
-                        .filter(|loc| loc.in_bounds())
-                        .map(|end| PossibleMove::new(square, end))
-                        .collect()
-                );
+                let knight_moves = [
+                    (2, 1),
+                    (2, -1),
+                    (1, 2),
+                    (-1, 2),
+                    (-2, 1),
+                    (-2, -1),
+                    (1, -2),
+                    (-1, -2)
+                ];
+                for mve in knight_moves {
+                    let knight_move = square.forwards(self.team, mve.0).sideways(mve.1);
+                    if knight_move.in_bounds() {
+                        if let Some(piece) = board.get(knight_move) {
+                            if piece.team != self.team {
+                                moves.push(PossibleMove::new(square, knight_move));
+                            }
+                        } else {
+                            moves.push(PossibleMove::new(square, knight_move));
+                        }
+                    }
+                }
             }
             PieceKind::Pawn => {
                 if board.get(square.forwards(self.team, 1)).is_none() {
-                    moves.push(PossibleMove::new(square, square.forwards(self.team, 1)))
+                    moves.push(PossibleMove::new(square, square.forwards(self.team, 1)));
+                }
+                if !square.forwards(self.team, -2).in_bounds() && board.get(square.forwards(self.team, 1)).is_none() && board.get(square.forwards(self.team, 2)).is_none() {
+                    moves.push(PossibleMove::new(square, square.forwards(self.team, 1)));
                 }
                 let takes = [
                     square.forwards(self.team, 1).sideways(-1),
@@ -244,6 +262,7 @@ impl PossibleMove {
             }
         }
         for horz_dir in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
+            // TODO: CASTLING
             let mut dist = 1;
             loop {
                 let current = king_loc.forwards(team, horz_dir.0 * dist).sideways(horz_dir.1 * dist);
@@ -300,25 +319,4 @@ impl PossibleMove {
 
         false
     }
-}
-
-pub struct Move {
-    start: Square,
-    end: Square,
-    check: bool,
-    capture: bool,
-    checkmate: bool,
-    kind: MoveKind,
-}
-
-pub enum MoveKind {
-    Regular,
-    Enpassent,
-    Castle {
-        rook_start: Square,
-        rook_end: Square,
-    },
-    Promotion {
-        new_piece: PieceKind,
-    },
 }
