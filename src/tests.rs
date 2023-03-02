@@ -71,3 +71,13 @@ fn rook_moves() {
     println!("{pos_moves:?}");
     assert!(pos_moves.contains(&PossibleMove::new(loc, loc.sideways(3))));
 }
+
+#[test]
+fn queen_moves() {
+    let loc = Square::from_alg("c6");
+    let board = Board::from_fen("7k/8/2Q5/8/8/8/8/7K w - - 1 1");
+    let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
+    println!("{pos_moves:?}");
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.sideways(3))));
+    assert!(pos_moves.contains(&PossibleMove::new(loc, loc.sideways(3).forwards(White, -3))));
+}
