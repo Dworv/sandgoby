@@ -5,7 +5,7 @@ use std::{fmt::{self, Debug, Formatter}, collections::HashMap};
 
 use crate::{
     Piece,
-    PieceKind::{*, self},
+    PieceKind::*,
     Team::{self, *}, PossibleMove,
 };
 
@@ -128,6 +128,15 @@ impl Board {
         self.pieces[square.0 as usize][square.1 as usize]
     }
 
+    pub fn get_ignoring(&self, square: Square, ignoring: Square) -> Option<Piece> {
+        if square == ignoring {
+            None
+        } else {
+            dbg!(square);
+            self.pieces[square.0 as usize][square.1 as usize]
+        }
+    }
+
     pub fn insert(&mut self, square: Square, piece: Piece) {
         self.pieces[square.0 as usize][square.1 as usize] = Some(piece);
     }
@@ -167,83 +176,6 @@ impl Board {
             }
         }
         possible_moves
-    }
-
-    pub fn threatened(&self, square: Square, ignoring: Option<Square>) -> bool {
-        if let Some(piece) = self.get(square) {
-            let team = piece.get_team();
-            let knight_moves = [
-                (2, 1),
-                (2, -1),
-                (1, 2),
-                (-1, 2),
-                (-2, 1),
-                (-2, -1),
-                (1, -2),
-                (-1, -2)
-            ];
-            for mve in knight_moves {
-                let new_square = square.forwards(team, mve.0).sideways(mve.1);
-                if new_square.in_bounds() {
-                    if let Some(other_piece) = self.get(new_square) {
-                        if other_piece.get_team() != team && other_piece.get_kind() == Knight {
-                            return true;
-                        }
-                    }
-                }
-            }
-            for offset in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
-                let mut dist = 1;
-                loop {
-                    let current = square.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
-                    if !current.in_bounds() {
-                        break;
-                    }
-                    if let Some(other_piece) = self.get(current) {
-                        if team != other_piece.get_team() && (other_piece.get_kind() == Rook || other_piece.get_kind() == Queen ) {
-                            return true;
-                        }
-                        break;
-                    }
-                    dist += 1;
-                }
-            }
-            for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1)] {
-                let mut dist = 1;
-                loop {
-                    let current = square.forwards(team, offset.0 * dist).sideways(offset.1 * dist);
-                    if !current.in_bounds() {
-                        break;
-                    }
-                    if let Some(other_piece) = self.get(current) {
-                        if team != other_piece.get_team() && (other_piece.get_kind() == Bishop || other_piece.get_kind() == Queen ) {
-                            return true;
-                        }
-                        break;
-                    }
-                    dist += 1;
-                }
-            }
-            for pawn_side in [1, -1] {
-                if let Some(other_piece) = self.get(square.forwards(team, 1).sideways(pawn_side)) {
-                    if team != other_piece.get_team() && other_piece.get_kind() == Pawn {
-                        return true;
-                    }
-                }
-            }
-            for king_r in -1..=1 {
-                for king_c in -1..=1 {
-                    if let Some(other_piece) = self.get(square.forwards(team, king_r).sideways(king_c)) {
-                        if other_piece.get_team() != team && other_piece.get_kind() == King {
-                            return true;
-                        }
-                    }
-                }
-            }
-        } else {
-            panic!("nothing here :(");
-        }
-        false
     }
 }
 
