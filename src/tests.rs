@@ -16,7 +16,7 @@ fn alg_out() {
 #[test]
 fn basic_pawn_moves() {
     let loc = Square::from_alg("e2");
-    let board = Board::normal_board();
+    let board = Board::starting_board();
     let pos_moves = board.get(loc).unwrap().possible_moves(loc, &board);
     assert!(pos_moves.contains(&PossibleMove::new(loc, loc.forwards(White, 1))));
 }
