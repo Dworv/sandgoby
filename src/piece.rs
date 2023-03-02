@@ -1,4 +1,4 @@
-use crate::{Board, Square};
+use crate::{Board, Square, PieceKind::*};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Copy)]
@@ -24,7 +24,12 @@ impl Piece {
         let mut moves = vec![];
         match self.kind {
             PieceKind::King => {
-
+                for king_move in [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)] {
+                    let king_dest = square.forwards(self.team, king_move.0).sideways(king_move.1);
+                    if king_dest.in_bounds() {
+                        moves.push(PossibleMove::new(square, king_dest));
+                    }
+                }
             },
             PieceKind::Queen => {
                 for offset in [(1, 1), (-1, 1), (1, -1), (-1, -1), (1, 0), (-1, 0), (0, -1), (0, 1)] {
@@ -120,7 +125,6 @@ impl Piece {
                     square.forwards(self.team, 1).sideways(-1),
                     square.forwards(self.team, 1).sideways(1),
                 ];
-                println!("{takes:?}");
                 for take in takes {
                     if take.in_bounds() {
                         if let Some(target) = board.get(take) {
@@ -142,7 +146,7 @@ impl Piece {
             }
         }
 
-        moves
+        moves.into_iter().filter(|mve| !mve.is_illegal(board)).collect()
     }
 }
 
@@ -183,11 +187,6 @@ pub enum PieceKind {
     Pawn,
 }
 
-pub enum CastleKind {
-    Kingside,
-    Queenside,
-}
-
 #[derive(Debug, PartialEq, Eq)]
 pub struct PossibleMove {
     start: Square,
@@ -215,6 +214,91 @@ impl PossibleMove {
 
     pub fn set_promotion(&mut self, promotion: bool) {
         self.promotion = promotion;
+    }
+
+    pub fn is_illegal(&self, board: &Board) -> bool {
+        let piece = board.get(self.start).unwrap();
+        let team = piece.team;
+        
+        let king_loc = if piece.get_kind() == King { self.end } else {board.get_king_loc(team) };
+        let ignoring = if piece.get_kind() == King { self.start } else { Square(-1, -1) };
+
+        let knight_moves = [
+            (2, 1),
+            (2, -1),
+            (1, 2),
+            (-1, 2),
+            (-2, 1),
+            (-2, -1),
+            (1, -2),
+            (-1, -2)
+        ];
+        for mve in knight_moves {
+            let knight_square = king_loc.forwards(team, mve.0).sideways(mve.1);
+            if knight_square.in_bounds() {
+                if let Some(other_piece) = board.get_ignoring(knight_square, ignoring) {
+                    if other_piece.get_team() != team && other_piece.get_kind() == Knight {
+                        return true;
+                    }
+                }
+            }
+        }
+        for horz_dir in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
+            let mut dist = 1;
+            loop {
+                let current = king_loc.forwards(team, horz_dir.0 * dist).sideways(horz_dir.1 * dist);
+                if !current.in_bounds() {
+                    break;
+                }
+                if let Some(other_piece) = board.get_ignoring(current, ignoring) {
+                    if team != other_piece.get_team() && (other_piece.get_kind() == Rook || other_piece.get_kind() == Queen ) {
+                        return true;
+                    }
+                    break;
+                }
+                dist += 1;
+            }
+        }
+        for vert_dir in [(1, 0), (-1, 0), (0, -1), (0, 1)] {
+            let mut dist = 1;
+            loop {
+                let current = king_loc.forwards(team, vert_dir.0 * dist).sideways(vert_dir.1 * dist);
+                if !current.in_bounds() {
+                    break;
+                }
+                if let Some(other_piece) = board.get_ignoring(current, ignoring) {
+                    if team != other_piece.get_team() && (other_piece.get_kind() == Bishop || other_piece.get_kind() == Queen ) {
+                        return true;
+                    }
+                    break;
+                }
+                dist += 1;
+            }
+        }
+        for pawn_side in [1, -1] {
+            let pawn_square = king_loc.forwards(team, 1).sideways(pawn_side);
+            if pawn_square.in_bounds() {
+                if let Some(other_piece) = board.get_ignoring(pawn_square, ignoring) {
+                    if team != other_piece.get_team() && other_piece.get_kind() == Pawn {
+                        return true;
+                    }
+                }
+            }
+        }
+        for king_r in -1..=1 {
+            for king_c in -1..=1 {
+                let king_square = king_loc.forwards(team, king_r).sideways(king_c);
+                if king_square.in_bounds() {
+                    if let Some(other_piece) = board.get_ignoring(king_square, ignoring) {
+                        if other_piece.get_team() != team && other_piece.get_kind() == King {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
     }
 }
 
