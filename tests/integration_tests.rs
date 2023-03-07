@@ -5,13 +5,14 @@ use sandgoby;
 #[test]
 fn basic_test() {
     let board = sandgoby::BoardBuilder::new()
-        .with_rules(sandgoby::NormalRules)
-        .with_boundry(sandgoby::NormalBoundry)
-        .with_pieces(sandgoby::NormalPieces)
+        .with_piece_set(sandgoby::ClassicPieces)
+        .with_colours(sandgoby::BW)
+        .with_rules(sandgoby::ClassicRules)
+        .fill(Fen::new("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"))
         .build()
         .unwrap();
     board.get_status();
-    board.get_moves();
-    board.make_move();
+    let mut moves = board.get_moves();
+    board.make_move(moves.next());
 }
 */
