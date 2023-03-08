@@ -27,6 +27,9 @@ impl<P: Piece> Board<P> {
 
         let mut fen_pieces = fen.split(' ');
         let mut board_rows = fen_pieces.next().ok_or(InvalidFen)?.split('/');
+
+        
+
         let raw_turn = fen_pieces.next().ok_or(InvalidFen)?;
         let raw_castle_rights = fen_pieces.next().ok_or(InvalidFen)?;
         let raw_enpassent_square = fen_pieces.next().ok_or(InvalidFen)?;

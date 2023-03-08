@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug)]
 pub struct InvalidAlg;
 
 impl fmt::Display for InvalidAlg {

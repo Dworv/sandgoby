@@ -19,6 +19,14 @@ impl Square {
         }
 
         while let Some(c) = chars.peek() {
+            if *c >= b'a' && *c <= b'z' {
+                letters.push(chars.next().unwrap() - b'a')
+            } else {
+                break;
+            }
+        }
+
+        while let Some(c) = chars.peek() {
             if *c <= b'9' && *c >= b'0' {
                 digits.push(chars.next().unwrap() as char);
             } else {
@@ -26,19 +34,14 @@ impl Square {
             }
         }
 
-        while let Some(c) = chars.peek() {
-            if *c <= b'a' && *c <= b'z' {
-                letters.push(chars.next().unwrap() - b'a')
-            }
-        }
-
         if digits.len() == 0 || letters.len() == 0 {
             return Err(InvalidAlg);
         }
 
-        let row = digits.parse::<u16>().map_err(|_| InvalidAlg)? - 1;
+        let row = size.0 - digits.parse::<u16>().map_err(|_| InvalidAlg)?;
         // TODO: Improve and allow more than 26 columns
-        let col = size.1 - letters[0] as u16 + 1;
+        dbg!(&letters);
+        let col = letters[0] as u16;
         Ok(Self(row, col))
     }
 
