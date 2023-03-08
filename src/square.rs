@@ -45,8 +45,8 @@ impl Square {
         Ok(Self(row, col))
     }
 
-    pub fn in_bounds(&self, size: (u16, u16)) -> bool {
-        self.0 >= 0 && self.0 < 8 && self.1 < 8 && self.1 >= 0
+    pub fn in_bounds(&self, size: (u16, u16), boundary: &dyn Fn(Self) -> bool) -> bool {
+        self.0 < size.0 && self.1 < size.1 && boundary(*self)
     }
 
     pub fn forwards(&self, piece: &impl Piece, dist: u16) -> Self {
