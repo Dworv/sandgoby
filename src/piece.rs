@@ -1,4 +1,4 @@
-use crate::{Board, Step};
+use crate::{Board, Step, BoardError};
 
 pub trait Piece: Copy + Sized {
     const NUM_TEAMS: u16;
@@ -8,6 +8,5 @@ pub trait Piece: Copy + Sized {
     fn is_king(&self) -> bool;
     fn team_id(&self) -> u16;
     fn possible_steps(&self, board: &Board<Self>) -> dyn Iterator<Item = Step>;
-    fn from_fen_char(c: char) -> Option<Self>;
-    fn team_id_from_fen(c: char) -> Option<u16>;
+    fn str_to_pieces(raw: &str, size: (u16, u16), in_bounds: impl Fn((u16, u16)) -> bool + 'static) ->  Result<Vec<Option<Self>>, BoardError>;
 }
