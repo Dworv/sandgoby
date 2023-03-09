@@ -12,9 +12,11 @@ impl fmt::Display for InvalidAlg {
 use std::fmt::Display;
 
 pub enum BoardError {
+    NotEnoughKings,
     IllegalPosition,
     InvalidFen,
-    UnknownError
+    UnknownError,
+    RoundIsZero
 }
 
 impl Display for BoardError {
@@ -22,7 +24,9 @@ impl Display for BoardError {
         f.write_str(match self {
             Self::IllegalPosition => "Illegal position",
             Self::InvalidFen => "Invalid fen",
-            Self::UnknownError => "Unknown error (please report)"
+            Self::UnknownError => "Unknown error (please report)",
+            Self::NotEnoughKings => "Not enough kings on the board",
+            Self::RoundIsZero => "Round is 0 (needs to be 1 or higher)"
         })
     }
 }
