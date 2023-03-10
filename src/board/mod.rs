@@ -7,8 +7,6 @@ pub use step::Step;
 
 pub struct Board<P: Piece> {
     pieces: Vec<Option<P>>,
-    size: (u16, u16),
-    in_bounds: Box<dyn Fn(Square) -> bool>,
     kings: Vec<Square>,
     current_team_id: u16,
     round: u32,
@@ -19,8 +17,6 @@ impl<P: Piece> Board<P> {
     pub fn new(
         pieces: Vec<Option<P>>,
         kings: Vec<Square>,
-        size: (u16, u16),
-        in_bounds: impl Fn(Square) -> bool + 'static,
         current_team_id: u16,
         round: u32,
         halfmove_timer: u32
@@ -33,9 +29,7 @@ impl<P: Piece> Board<P> {
         }
         Ok(
             Board {
-                pieces, 
-                size, 
-                in_bounds: Box::new(in_bounds),
+                pieces,
                 kings,
                 current_team_id,
                 round,
