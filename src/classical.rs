@@ -1,4 +1,4 @@
-use crate::{BoardError::{self, *}, Piece, Step, Square, Board};
+use crate::{BoardError::{self, *}, Piece, Step, Square, Board, square::{Direction, DirScale}};
 
 #[derive(Clone, Copy)]
 pub struct ClassicalPiece {
@@ -6,7 +6,7 @@ pub struct ClassicalPiece {
     team_id: u16
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ClassicalPieceKind {
     King,
     Queen,
@@ -18,30 +18,43 @@ pub enum ClassicalPieceKind {
 
 impl Piece for ClassicalPiece {
     const NUM_TEAMS: u16 = 2;
+    const BOARD_SIZE: (u16, u16) = (8, 8);
     type StepIter = ClassicalSteps;
 
-    fn forwards(&self) -> (u16, u16) {
-        todo!()
+    fn forwards(&self) -> Direction {
+        match self.team_id {
+            0 => Direction(DirScale::Minus, DirScale::Neutral),
+            1 => Direction(DirScale::Plus, DirScale::Neutral),
+            _ => panic!()
+        }
     }
 
-    fn sideways(&self) -> (u16, u16) {
-        todo!()
+    fn sideways(&self) -> Direction {
+        match self.team_id {
+            0 => Direction(DirScale::Neutral, DirScale::Plus),
+            1 => Direction(DirScale::Neutral, DirScale::Plus),
+            _ => panic!()
+        }
     }
 
     fn can_kill(&self, other: &Self) -> bool {
-        todo!()
+        self.team_id != other.team_id
     }
 
     fn is_king(&self) -> bool {
-        todo!()
+        self.kind == ClassicalPieceKind::King
     }
 
     fn team_id(&self) -> u16 {
+        self.team_id
+    }
+
+    fn possible_steps(&self, board: &Board<Self>) -> Self::StepIter {
         todo!()
     }
 
-    fn possible_steps(&self, board: &crate::Board<Self>) -> Self::StepIter {
-        todo!()
+    fn in_bounds(square: Square) -> bool {
+        true
     }
 }
 
@@ -116,8 +129,6 @@ pub fn setup_from_fen(raw: &str) -> Result<Board<ClassicalPiece>, BoardError> {
     Board::new(
         pieces,
         kings,
-        (8, 8),
-        |_| true,
         current_team_id,
         round,
         halfmove_timer
