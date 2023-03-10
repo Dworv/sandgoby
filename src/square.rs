@@ -45,18 +45,56 @@ impl Square {
         Ok(Self(row, col))
     }
 
-    pub fn in_bounds(&self, size: (u16, u16), boundary: &dyn Fn(Self) -> bool) -> bool {
-        self.0 < size.0 && self.1 < size.1 && boundary(*self)
+    pub fn in_bounds(self, size: (u16, u16), boundary: &dyn Fn(Self) -> bool) -> bool {
+        self.0 < size.0 && self.1 < size.1 && boundary(self)
     }
 
-    pub fn forwards(&self, piece: &impl Piece, dist: u16) -> Self {
+    pub fn forwards(self, piece: &impl Piece, dist: u16) -> Option<Self> {
         let direction = piece.forwards();
-        Square(self.0 + dist * direction.0, self.1 + dist * direction.1)
+        let mut square = self;
+        match direction.0 {
+            DirScale::Plus => {
+                square = Square(square.0.checked_add(dist)?, square.1);
+            },
+            DirScale::Minus => {
+                square = Square(square.0.checked_sub(dist)?, square.1);
+            },
+            _ => {},
+        }
+        match direction.1 {
+            DirScale::Plus => {
+                square = Square(square.0, square.1.checked_add(dist)?);
+            },
+            DirScale::Minus => {
+                square = Square(square.0, square.1.checked_sub(dist)?);
+            },
+            _ => {},
+        }
+        Some(square)
     }
 
-    pub fn sideways(&self, piece: impl Piece, dist: u16) -> Self {
+    pub fn sideways(self, piece: &impl Piece, dist: u16) -> Option<Self> {
         let direction = piece.sideways();
-        Square(self.0 + dist * direction.0, self.1 + dist * direction.1)
+        let mut square = self;
+        match direction.0 {
+            DirScale::Plus => {
+                square = Square(square.0.checked_add(dist)?, square.1);
+            },
+            DirScale::Minus => {
+                square = Square(square.0.checked_sub(dist)?, square.1);
+            },
+            _ => {},
+        }
+        match direction.1 {
+            DirScale::Plus => {
+                square = Square(square.0, square.1.checked_add(dist)?);
+            },
+            DirScale::Minus => {
+                square = Square(square.0, square.1.checked_sub(dist)?);
+            },
+            _ => {},
+        }
+        Some(square)
     }
 }
 
@@ -64,4 +102,14 @@ impl Debug for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.in_alg())
     }
+}
+
+#[derive(Clone, Copy)]
+pub struct Direction(pub DirScale, pub DirScale);
+
+#[derive(Clone, Copy)]
+pub enum DirScale {
+    Plus,
+    Minus,
+    Neutral
 }
